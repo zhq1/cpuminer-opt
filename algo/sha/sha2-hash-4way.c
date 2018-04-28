@@ -30,7 +30,7 @@
  * @author   Thomas Pornin <thomas.pornin@cryptolog.com>
  */
 
-#if defined(__AVX__)
+#if defined(__SSE4_2__)
 
 #include <stddef.h>
 #include <string.h>
@@ -98,19 +98,19 @@ static const sph_u32 K256[64] = {
 
 #define BSG2_0(x) \
    _mm_xor_si128( _mm_xor_si128( \
-        mm_rotr_32(x,  2), mm_rotr_32(x, 13) ), mm_rotr_32( x, 22) )
+        mm_ror_32(x,  2), mm_ror_32(x, 13) ), mm_ror_32( x, 22) )
 
 #define BSG2_1(x) \
    _mm_xor_si128( _mm_xor_si128( \
-        mm_rotr_32(x,  6), mm_rotr_32(x, 11) ), mm_rotr_32( x, 25) )
+        mm_ror_32(x,  6), mm_ror_32(x, 11) ), mm_ror_32( x, 25) )
 
 #define SSG2_0(x) \
    _mm_xor_si128( _mm_xor_si128( \
-        mm_rotr_32(x,  7), mm_rotr_32(x, 18) ), _mm_srli_epi32(x, 3) ) 
+        mm_ror_32(x,  7), mm_ror_32(x, 18) ), _mm_srli_epi32(x, 3) ) 
 
 #define SSG2_1(x) \
    _mm_xor_si128( _mm_xor_si128( \
-        mm_rotr_32(x, 17), mm_rotr_32(x, 19) ), _mm_srli_epi32(x, 10) )
+        mm_ror_32(x, 17), mm_ror_32(x, 19) ), _mm_srli_epi32(x, 10) )
 
 #define SHA2s_4WAY_STEP(A, B, C, D, E, F, G, H, i, j) \
 do { \
@@ -311,19 +311,19 @@ void sha256_4way_close( sha256_4way_context *sc, void *dst )
 
 #define BSG2_0x(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-       mm256_rotr_32(x,  2), mm256_rotr_32(x, 13) ), mm256_rotr_32( x, 22) )
+       mm256_ror_32(x,  2), mm256_ror_32(x, 13) ), mm256_ror_32( x, 22) )
 
 #define BSG2_1x(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-       mm256_rotr_32(x,  6), mm256_rotr_32(x, 11) ), mm256_rotr_32( x, 25) )
+       mm256_ror_32(x,  6), mm256_ror_32(x, 11) ), mm256_ror_32( x, 25) )
 
 #define SSG2_0x(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-       mm256_rotr_32(x,  7), mm256_rotr_32(x, 18) ), _mm256_srli_epi32(x, 3) ) 
+       mm256_ror_32(x,  7), mm256_ror_32(x, 18) ), _mm256_srli_epi32(x, 3) ) 
 
 #define SSG2_1x(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-       mm256_rotr_32(x, 17), mm256_rotr_32(x, 19) ), _mm256_srli_epi32(x, 10) )
+       mm256_ror_32(x, 17), mm256_ror_32(x, 19) ), _mm256_srli_epi32(x, 10) )
 
 #define SHA2x_MEXP( a, b, c, d ) \
      _mm256_add_epi32( _mm256_add_epi32( _mm256_add_epi32( \
@@ -373,9 +373,6 @@ sha256_8way_round( __m256i *in, __m256i r[8] )
    H = r[7];
 
    SHA2s_8WAY_STEP( A, B, C, D, E, F, G, H,  0, 0 );
-
-//printf("sha256 8 step: D= %08lx H= %08lx\n",*(uint32_t*)&D,*(uint32_t*)&H);
-
    SHA2s_8WAY_STEP( H, A, B, C, D, E, F, G,  1, 0 );
    SHA2s_8WAY_STEP( G, H, A, B, C, D, E, F,  2, 0 );
    SHA2s_8WAY_STEP( F, G, H, A, B, C, D, E,  3, 0 );
@@ -391,8 +388,6 @@ sha256_8way_round( __m256i *in, __m256i r[8] )
    SHA2s_8WAY_STEP( D, E, F, G, H, A, B, C, 13, 0 );
    SHA2s_8WAY_STEP( C, D, E, F, G, H, A, B, 14, 0 );
    SHA2s_8WAY_STEP( B, C, D, E, F, G, H, A, 15, 0 );
-
-//printf("sha256 8 step: A= %08lx B= %08lx\n",*(uint32_t*)&A,*(uint32_t*)&B);
 
    for ( int j = 16; j < 64; j += 16 )
    {
@@ -460,17 +455,7 @@ void sha256_8way( sha256_8way_context *sc, const void *data, size_t len )
    __m256i *vdata = (__m256i*)data;
    size_t ptr;
    const int buf_size = 64;
-/*
-printf("sha256 8 update1: len= %d\n", len);
-uint32_t* d = (uint32_t*)data;
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[64],d[72],d[80],d[88]);
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[96],d[104],d[112],d[120]);
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[128],d[136],d[144],d[152]);
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[160],d[168],d[176],d[184]);
-printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[192],d[200],d[208],d[216]);
-*/
+
    ptr = (unsigned)sc->count_low & (buf_size - 1U);
    while ( len > 0 )
    {
@@ -486,24 +471,7 @@ printf("sha256 8 in: %08lx %08lx %08lx %08lx\n",d[192],d[200],d[208],d[216]);
       len -= clen;
       if ( ptr == buf_size )
       {
-/*
-printf("sha256 8 update2: compress\n");
-d = (uint32_t*)sc->buf;
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[64],d[72],d[80],d[88]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[96],d[104],d[112],d[120]);
-d= (uint32_t*)sc->val;
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-*/
          sha256_8way_round( sc->buf, sc->val );
-/*
-printf("sha256 8 update3\n");
-d= (uint32_t*)sc->val;
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-*/
          ptr = 0;
       }
       clow = sc->count_low;
@@ -522,32 +490,13 @@ void sha256_8way_close( sha256_8way_context *sc, void *dst )
     const int pad = buf_size - 8;
 
     ptr = (unsigned)sc->count_low & (buf_size - 1U);
-/*
-printf("sha256 8 close1: ptr= %d\n", ptr);
-uint32_t* d = (uint32_t*)sc->buf;
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[64],d[72],d[80],d[88]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[96],d[104],d[112],d[120]);
-*/
-
     sc->buf[ ptr>>2 ] = _mm256_set1_epi32( 0x80 );
     ptr += 4;
 
     if ( ptr > pad )
     {
          memset_zero_256( sc->buf + (ptr>>2), (buf_size - ptr) >> 2 );
-
-//printf("sha256 8 close2: compress\n");
-//uint32_t* d = (uint32_t*)sc->buf;
-//printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-
-
          sha256_8way_round( sc->buf, sc->val );
-
-//d= (uint32_t*)sc->val;
-//printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-
          memset_zero_256( sc->buf, pad >> 2 );
     }
     else
@@ -561,23 +510,9 @@ printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[96],d[104],d[112],d[120]);
                  mm256_bswap_32( _mm256_set1_epi32( high ) );
     sc->buf[ ( pad+4 ) >> 2 ] =
                  mm256_bswap_32( _mm256_set1_epi32( low ) );
-/*
-d = (uint32_t*)sc->buf;
-printf("sha256 8 close3: compress\n");
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[64],d[72],d[80],d[88]);
-printf("sha256 8 buf: %08lx %08lx %08lx %08lx\n",d[96],d[104],d[112],d[120]);
-d= (uint32_t*)sc->val;
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-*/
 
     sha256_8way_round( sc->buf, sc->val );
-/*
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[0],d[8],d[16],d[24]);
-printf("sha256 8 val: %08lx %08lx %08lx %08lx\n",d[32],d[40],d[48],d[56]);
-*/
+
     for ( u = 0; u < 8; u ++ )
        ((__m256i*)dst)[u] = mm256_bswap_32( sc->val[u] );
 }
@@ -644,19 +579,19 @@ static const sph_u64 K512[80] = {
 
 #define BSG5_0(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-        mm256_rotr_64(x, 28), mm256_rotr_64(x, 34) ), mm256_rotr_64(x, 39) )
+        mm256_ror_64(x, 28), mm256_ror_64(x, 34) ), mm256_ror_64(x, 39) )
 
 #define BSG5_1(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-        mm256_rotr_64(x, 14), mm256_rotr_64(x, 18) ), mm256_rotr_64(x, 41) )
+        mm256_ror_64(x, 14), mm256_ror_64(x, 18) ), mm256_ror_64(x, 41) )
 
 #define SSG5_0(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-        mm256_rotr_64(x, 1), mm256_rotr_64(x, 8) ), _mm256_srli_epi64(x, 7) ) 
+        mm256_ror_64(x,  1), mm256_ror_64(x,  8) ), _mm256_srli_epi64(x, 7) ) 
 
 #define SSG5_1(x) \
    _mm256_xor_si256( _mm256_xor_si256( \
-        mm256_rotr_64(x, 19), mm256_rotr_64(x, 61) ), _mm256_srli_epi64(x, 6) )
+        mm256_ror_64(x, 19), mm256_ror_64(x, 61) ), _mm256_srli_epi64(x, 6) )
 
 #define SHA3_4WAY_STEP(A, B, C, D, E, F, G, H, i) \
 do { \
@@ -781,4 +716,4 @@ void sha512_4way_close( sha512_4way_context *sc, void *dst )
 }
 
 #endif  // __AVX2__
-#endif  // __AVX__
+#endif  // __SSE4_2__

@@ -24,7 +24,7 @@ inline void argon_call(void *out, void *in, void *salt, int type)
 	context.allocate_cbk = NULL;
 	context.free_cbk = NULL;
 
-	argon2_core(&context, type);
+	ar2_argon2_core(&context, type);
 }
 
 void argon2hash(void *output, const void *input)
@@ -79,7 +79,7 @@ int64_t argon2_get_max64 ()
 
 bool register_argon2_algo( algo_gate_t* gate )
 {
-  gate->optimizations = SSE2_OPT | AES_OPT | AVX_OPT | AVX2_OPT;
+  gate->optimizations = SSE2_OPT | AVX_OPT | AVX2_OPT;
   gate->scanhash        = (void*)&scanhash_argon2;
   gate->hash            = (void*)&argon2hash;
   gate->gen_merkle_root = (void*)&SHA256_gen_merkle_root;

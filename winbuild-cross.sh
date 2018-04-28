@@ -26,12 +26,6 @@ strip -s cpuminer.exe
 mv cpuminer.exe release/cpuminer-avx2-sha.exe
 
 #make clean || echo clean
-#rm -f config.status
-#CFLAGS="-O3 -march=core-avx2 -Wall -DFOUR_WAY" ./configure $F
-#make
-#mv cpuminer.exe release/cpuminer-4way.exe
-
-#make clean || echo clean
 #CFLAGS="-O3 -march=corei7-avx -msha -Wall" ./configure $F
 #make
 #strip -s cpuminer.exe
@@ -57,11 +51,13 @@ rm -f config.status
 CFLAGS="-O3 -march=corei7-avx -Wall" ./configure $F 
 make 
 strip -s cpuminer.exe
-mv cpuminer.exe release/cpuminer-aes-avx.exe
+mv cpuminer.exe release/cpuminer-avx.exe
 
+# -march=westmere is supported in gcc5
 make clean || echo clean
 rm -f config.status
-CFLAGS="-O3 -maes -msse4.2 -Wall" ./configure $F
+CFLAGS="-O3 -march=westmere -Wall" ./configure $F
+#CFLAGS="-O3 -maes -msse4.2 -Wall" ./configure $F
 make 
 strip -s cpuminer.exe
 mv cpuminer.exe release/cpuminer-aes-sse42.exe
@@ -73,10 +69,18 @@ mv cpuminer.exe release/cpuminer-aes-sse42.exe
 #strip -s cpuminer.exe
 #mv cpuminer.exe release/cpuminer-sse42.exe
 
+#make clean || echo clean
+#rm -f config.status
+#CFLAGS="-O3 -march=core2 -Wall" ./configure $F
+#make 
+#strip -s cpuminer.exe
+#mv cpuminer.exe release/cpuminer-ssse3.exe
+#make clean || echo clean
+
 make clean || echo clean
 rm -f config.status
-CFLAGS="-O3 -march=core2 -Wall" ./configure $F
-make 
+CFLAGS="-O3 -msse2 -Wall" ./configure $F
+make
 strip -s cpuminer.exe
 mv cpuminer.exe release/cpuminer-sse2.exe
 make clean || echo clean

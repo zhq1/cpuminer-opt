@@ -13,11 +13,11 @@ Security warning
 ----------------
 
 Miner programs are often flagged as malware by antivirus programs. This is
-a false positive, they are flagged simply because they are miners. The source
-code is open for anyone to inspect. If you don't trust the software, don't use
-it.
+a false positive, they are flagged simply because they are cryptocurrency 
+miners. The source code is open for anyone to inspect. If you don't trust 
+the software, don't use it.
 
-The cryptographic code has been taken from trusted sources but has been
+The cryptographic hashing code has been taken from trusted sources but has been
 modified for speed at the expense of accepted security practices. This
 code should not be imported into applications where secure cryptography is
 required.
@@ -81,7 +81,7 @@ cd cpuminer-opt-x.y.z
 Run ./build.sh to build on Linux or execute the following commands.
 
 ./autogen.sh
-CFLAGS="-O3 -march=native -Wall" CXXFLAGS="$CFLAGS -std=gnu++11" ./configure --with-curl
+CFLAGS="-O3 -march=native -Wall" ./configure --with-curl
 make
 
 Additional optional compile flags, add the following to CFLAGS to activate:
@@ -160,9 +160,54 @@ Support for even older x86_64 without AES_NI or SSE2 is not availble.
 Change Log
 ----------
 
+v3.8.8
+
+Added cryptonightv7 for Monero.
+
+v3.8.7.2
+
+Fixed argon2d-dyn regression in v3.8.7.1.
+Changed compile options for aes-sse42 Windows build to -march=westmere
+
+v3.8.7.1
+
+Fixed argon2d-uis low difficulty rejects.
+Fixed argon2d aliases.
+
+v3.8.7
+
+Added argon2d4096 (alias argon2d-uis) for Unitus (UIS).
+argon2d-crds and argon2d-dyn renamed to argon2d250 and argon2d500 respectively.
+  The old names are recognized as aliases.
+AVX512 is now supported for argon2d algos, Linux only.
+AVX is no longer a reported feature and an AVX Windows binary is no longer
+  provided. Use AES-SSE42 build instead.
+
+v3.8.6.1
+
+Faster argon2d* AVX2.
+Untested AVX-512 for argon2d*, YMMV.
+
+v3.8.6
+
+Fixed argon2 regression in v3.8.5.
+Added x16s algo for Pigeoncoin.
+Some code cleanup.
+
+v3.8.5
+
+Added argon2d-crds and argon2d-dyn algos.
+sha256t 8 way AVX2 & 4 way SSE4.2 optimized.
+CPUs with SSE4.2 get optimizations previously reserved for AVX.
+
+v3.8.4.1
+
+Fixed sha256t low difficulty rejects.
+Fixed compile error on CPUs with AVX512.
+
 v3.8.4
 
-Added yescrypt32 algo for WAVI coin.
+Added yescryptr32 algo for WAVI coin.
 Added URL to API data.
 Improved detection of __int128 support (linux only)
 Compile support for CPUs without SSSE3 (no binary support)
